@@ -16,7 +16,7 @@ estimator.infer(observations, source_model, optimizer, log_likelihood_fct)
 ```
 The source code for the different estimators was written to be self-contained in a single file for a quick and easy understanding.
 
-[Getting Started](https://github.com/MaximeVandegar/final_NEB/tree/main/examples)
+[Getting Started](https://github.com/MaximeVandegar/NEB/tree/main/examples)
 
 ## Cite
 
