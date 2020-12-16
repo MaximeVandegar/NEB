@@ -33,7 +33,7 @@ class McUnbiasedEstimator:
 
     @staticmethod
     def compute_estimator(minibatch, K, device, source_data_dim, prior_network,
-                          likelihood_fct, p_j):
+                          log_likelihood_fct, p_j):
         """
         Estimate the log marginal likelihood of the minibatch with Monte Carlo integration and the Russian roulette
         estimator (unbiased)
@@ -51,7 +51,7 @@ class McUnbiasedEstimator:
         z = GaussianDistribution.sample(minibatch.shape[0], dim=source_data_dim).to(device)
         x = prior_network(z)
 
-        log_y_likelihoods = likelihood_fct(minibatch.to(device), x)
+        log_y_likelihoods = log_likelihood_fct(minibatch.to(device), x)
         log_y_likelihoods = log_y_likelihoods.view(-1, K + J)
 
         # Computes the log marginal likelihood of the minibatch
@@ -72,7 +72,7 @@ class McUnbiasedEstimator:
         return log_marginal_likelihood
 
     @staticmethod
-    def infer(observations, prior_network, optimizer, likelihood_fct, source_data_dim, p_j=BernouilliDistribution(),
+    def infer(observations, prior_network, optimizer, log_likelihood_fct, source_data_dim, p_j=BernouilliDistribution(),
               nb_epochs=300, batch_size=128, nb_mc_integration_steps=10, validation_set_size=0.1, early_stopping=True,
               early_stopping_patience=10, early_stopping_verbose=True):
 
@@ -95,7 +95,7 @@ class McUnbiasedEstimator:
             for batch in dataloader:
                 log_marginal_likelihood = McUnbiasedEstimator.compute_estimator(batch, nb_mc_integration_steps,
                                                                                 batch.device, source_data_dim,
-                                                                                prior_network, likelihood_fct, p_j)
+                                                                                prior_network, log_likelihood_fct, p_j)
 
                 optimizer.zero_grad()
                 loss = - log_marginal_likelihood
@@ -114,7 +114,7 @@ class McUnbiasedEstimator:
             for batch in dataloader:
                 log_marginal_likelihood = McUnbiasedEstimator.compute_estimator(batch, nb_mc_integration_steps,
                                                                                 batch.device, source_data_dim,
-                                                                                prior_network, likelihood_fct, p_j)
+                                                                                prior_network, log_likelihood_fct, p_j)
                 loss = - log_marginal_likelihood
                 batch_loss.append(loss.item())
 

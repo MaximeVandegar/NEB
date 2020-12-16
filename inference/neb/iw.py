@@ -10,7 +10,7 @@ from utils import GaussianDistribution
 class IwEstimator:
     @staticmethod
     def compute_estimator(minibatch, device, source_data_dim, prior_network,
-                          recognition_network, likelihood_fct, K):
+                          recognition_network, log_likelihood_fct, K):
         """
         Estimate the log marginal likelihood of the minibatch with the variational estimator
         defined in: 'Importance Weighted Autoencoders,
@@ -29,7 +29,7 @@ class IwEstimator:
         x, log_jacobian = recognition_network.forward_and_compute_log_jacobian(z, minibatch.to(device))
 
         log_posterior = GaussianDistribution.log_pdf(z) - log_jacobian
-        log_y_likelihood = likelihood_fct(minibatch.to(device), x)
+        log_y_likelihood = log_likelihood_fct(minibatch.to(device), x)
         log_prior, _ = prior_network.compute_ll(x)
 
         # Estimates the log marginal likelihood
@@ -41,7 +41,7 @@ class IwEstimator:
 
     @staticmethod
     def infer(observations, prior_network, optimizer_prior_network, recognition_network, optimizer_recognition_network,
-              likelihood_fct, source_data_dim, K=128, nb_epochs=300, batch_size=128, validation_set_size=0.1,
+              log_likelihood_fct, source_data_dim, K=128, nb_epochs=300, batch_size=128, validation_set_size=0.1,
               early_stopping=True, early_stopping_patience=10, early_stopping_verbose=True):
 
         assert batch_size <= observations.shape[0], 'The number of observations should be greater or equal than the ' \
@@ -63,7 +63,7 @@ class IwEstimator:
             for batch in dataloader:
                 log_marginal_likelihood = IwEstimator.compute_estimator(batch, batch.device, source_data_dim,
                                                                         prior_network, recognition_network,
-                                                                        likelihood_fct, K)
+                                                                        log_likelihood_fct, K)
 
                 optimizer_prior_network.zero_grad()
                 optimizer_recognition_network.zero_grad()
@@ -85,7 +85,7 @@ class IwEstimator:
             for batch in dataloader:
                 log_marginal_likelihood = IwEstimator.compute_estimator(batch, batch.device, source_data_dim,
                                                                         prior_network, recognition_network,
-                                                                        likelihood_fct, K)
+                                                                        log_likelihood_fct, K)
                 loss = - log_marginal_likelihood
                 batch_loss.append(loss.item())
 

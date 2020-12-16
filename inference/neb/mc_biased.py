@@ -11,7 +11,7 @@ class McBiasedEstimator:
 
     @staticmethod
     def compute_estimator(minibatch, nb_mc_integration_steps, device, source_data_dim, prior_network,
-                          likelihood_fct):
+                          log_likelihood_fct):
         """
         Estimate the log marginal likelihood of the minibatch with Monte Carlo integration (biased)
         """
@@ -27,13 +27,13 @@ class McBiasedEstimator:
         x = prior_network(z)
 
         # Estimates the log marginal likelihood
-        log_y_likelihoods = likelihood_fct(minibatch.to(device), x)
+        log_y_likelihoods = log_likelihood_fct(minibatch.to(device), x)
         log_y_likelihoods = log_y_likelihoods.view(-1, nb_mc_integration_steps)
         log_marginal_likelihood = torch.logsumexp(log_y_likelihoods, dim=1).sum()
         return log_marginal_likelihood
 
     @staticmethod
-    def infer(observations, prior_network, optimizer, likelihood_fct, source_data_dim, nb_epochs=300, batch_size=128,
+    def infer(observations, prior_network, optimizer, log_likelihood_fct, source_data_dim, nb_epochs=300, batch_size=128,
               nb_mc_integration_steps=10, validation_set_size=0.1, early_stopping=True, early_stopping_patience=10,
               early_stopping_verbose=True):
 
@@ -56,7 +56,7 @@ class McBiasedEstimator:
             for batch in dataloader:
                 log_marginal_likelihood = McBiasedEstimator.compute_estimator(batch, nb_mc_integration_steps,
                                                                               batch.device, source_data_dim,
-                                                                              prior_network, likelihood_fct)
+                                                                              prior_network, log_likelihood_fct)
 
                 optimizer.zero_grad()
                 loss = - log_marginal_likelihood
@@ -75,7 +75,7 @@ class McBiasedEstimator:
             for batch in dataloader:
                 log_marginal_likelihood = McBiasedEstimator.compute_estimator(batch, nb_mc_integration_steps,
                                                                               batch.device, source_data_dim,
-                                                                              prior_network, likelihood_fct)
+                                                                              prior_network, log_likelihood_fct)
                 loss = - log_marginal_likelihood
                 batch_loss.append(loss.item())
 
